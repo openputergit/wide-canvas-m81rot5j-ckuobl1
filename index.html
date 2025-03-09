@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Timetable Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-[Inter]">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">College Timetable</h1>
+            <p class="text-slate-600">Keep track of your lectures</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div id="currentLecture" class="mb-6">
+                <h2 class="text-lg font-semibold text-slate-700 mb-3">Current Lecture</h2>
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center gap-3">
+                        <i class="bi bi-clock text-blue-600 text-xl"></i>
+                        <div>
+                            <p class="font-medium text-blue-900" id="currentSubject">Loading...</p>
+                            <p class="text-sm text-blue-700" id="currentTeacher"></p>
+                            <p class="text-sm text-blue-600" id="currentTime"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="nextLecture">
+                <h2 class="text-lg font-semibold text-slate-700 mb-3">Next Lecture</h2>
+                <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <i class="bi bi-arrow-right-circle text-gray-600 text-xl"></i>
+                        <div>
+                            <p class="font-medium text-gray-900" id="nextSubject">Loading...</p>
+                            <p class="text-sm text-gray-700" id="nextTeacher"></p>
+                            <p class="text-sm text-gray-600" id="nextTime"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-slate-700 mb-4">Weekly Timetable</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="timetable">
+                    <!-- Timetable will be populated by JavaScript -->
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample timetable data (you can replace this with your actual timetable)
+        const timetable = {
+            Monday: [
+                { time: "11:30-12:30", subject: "DS", teacher: "S.B.Sarvaiya" },
+                { time: "12:30-1:30", subject: "AI", teacher: "Rana Afreen Shaikh" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "CSC", teacher: "K.P.Raghuwanshi" }, 
+                { time: "3:00-5:00", subject: "LAB", teacher: "KPR+SKT+SBS" },
+            ],
+            Tuesday: [
+                { time: "11:30-12:30", subject: "ADBMS", teacher: "S.K.Totade" },
+                { time: "12:30-1:30", subject: "DS", teacher: "S.B.Sarvaiya" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "AI", teacher: "Rana Afreen Shaikh" }, 
+                { time: "3:00-5:00", subject: "LAB", teacher: "RAS+SBB+SBS" },
+            ],
+            Wednesday: [
+                { time: "11:30-12:30", subject: "AI", teacher: "Rana Afreen Shaikh" },
+                { time: "12:30-1:30", subject: "ADBMS", teacher: "S.K.Totade" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "SE", teacher: "S.B.Bele" }, 
+                { time: "3:00-5:00", subject: "LAB", teacher: "SKT+RAS+KPR" },
+            ],
+            Thursday: [
+                { time: "11:30-12:30", subject: "CSC", teacher: "K.P.Raghuwanshi" },
+                { time: "12:30-1:30", subject: "AI", teacher: "Rana Afreen Shaikh" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "SE", teacher: "S.B.Bele" }, 
+                { time: "3:00-5:00", subject: "LAB", teacher: "SBS+RAS+SKT" },
+            ], 
+            Friday: [
+                { time: "11:30-12:30", subject: "SE", teacher: "S.B.Bele" },
+                { time: "12:30-1:30", subject: "ADBMS", teacher: "S.K.Totade" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "DS", teacher: "S.B.Sarvaiya" }, 
+                { time: "3:00-5:00", subject: "CSC", teacher: "K.P.Raghuwanshi" },
+            ],
+            Saturday: [
+                { time: "11:30-12:30", subject: "SE", teacher: "S.B.Bele" },
+                { time: "12:30-1:30", subject: "ADBMS", teacher: "S.K.Totade" },
+                { time: "1:30-2:00", RECESS },
+                { time: "2:00-3:00", subject: "DS", teacher: "S.B.Sarvaiya" }, 
+                { time: "3:00-5:00", subject: "CSC", teacher: "K.P.Raghuwanshi" },
+            ],
+            // Add more days...
+        };
+
+        // Function to get current and next lecture
+        function updateLectureInfo() {
+            const now = new Date();
+            const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+
+            const todaySchedule = timetable[day];
+            if (!todaySchedule) {
+                displayNoLectures();
+                return;
+            }
+
+            let currentLecture = null;
+            let nextLecture = null;
+
+            for (let i = 0; i < todaySchedule.length; i++) {
+                const lecture = todaySchedule[i];
+                const [startStr, endStr] = lecture.time.split('-');
+                const [startHour, startMin] = startStr.split(':').map(Number);
+                const [endHour, endMin] = endStr.split(':').map(Number);
+                
+                const lectureStartTime = startHour * 60 + startMin;
+                const lectureEndTime = endHour * 60 + endMin;
+
+                if (currentTime >= lectureStartTime && currentTime < lectureEndTime) {
+                    currentLecture = lecture;
+                    nextLecture = todaySchedule[i + 1];
+                    break;
+                }
+                if (currentTime < lectureStartTime && !nextLecture) {
+                    nextLecture = lecture;
+                }
+            }
+
+            updateDisplay(currentLecture, nextLecture);
+        }
+
+        function updateDisplay(currentLecture, nextLecture) {
+            const currentSubject = document.getElementById('currentSubject');
+            const currentTeacher = document.getElementById('currentTeacher');
+            const currentTime = document.getElementById('currentTime');
+            const nextSubject = document.getElementById('nextSubject');
+            const nextTeacher = document.getElementById('nextTeacher');
+            const nextTime = document.getElementById('nextTime');
+
+            if (currentLecture) {
+                currentSubject.textContent = currentLecture.subject;
+                currentTeacher.textContent = currentLecture.teacher;
+                currentTime.textContent = currentLecture.time;
+                // Show notification
+                if (Notification.permission === "granted") {
+                    new Notification("Current Lecture", {
+                        body: `${currentLecture.subject} with ${currentLecture.teacher}\nTime: ${currentLecture.time}`
+                    });
+                }
+            } else {
+                currentSubject.textContent = "No Current Lecture";
+                currentTeacher.textContent = "";
+                currentTime.textContent = "";
+            }
+
+            if (nextLecture) {
+                nextSubject.textContent = nextLecture.subject;
+                nextTeacher.textContent = nextLecture.teacher;
+                nextTime.textContent = nextLecture.time;
+            } else {
+                nextSubject.textContent = "No More Lectures Today";
+                nextTeacher.textContent = "";
+                nextTime.textContent = "";
+            }
+        }
+
+        // Function to display timetable
+        function displayTimetable() {
+            const table = document.getElementById('timetable');
+            table.innerHTML = '';
+
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            ['Day', 'Time', 'Subject', 'Teacher'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.className = 'px-4 py-2 bg-gray-50 text-left text-gray-600';
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Create body
+            const tbody = document.createElement('tbody');
+            Object.entries(timetable).forEach(([day, lectures]) => {
+                lectures.forEach((lecture, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-t border-gray-100';
+                    
+                    // Only show day name for first lecture of the day
+                    const dayCell = document.createElement('td');
+                    dayCell.className = 'px-4 py-3 text-gray-800';
+                    dayCell.textContent = index === 0 ? day : '';
+                    row.appendChild(dayCell);
+
+                    const timeCell = document.createElement('td');
+                    timeCell.className = 'px-4 py-3 text-gray-800';
+                    timeCell.textContent = lecture.time;
+                    row.appendChild(timeCell);
+
+                    const subjectCell = document.createElement('td');
+                    subjectCell.className = 'px-4 py-3 text-gray-800 font-medium';
+                    subjectCell.textContent = lecture.subject;
+                    row.appendChild(subjectCell);
+
+                    const teacherCell = document.createElement('td');
+                    teacherCell.className = 'px-4 py-3 text-gray-600';
+                    teacherCell.textContent = lecture.teacher;
+                    row.appendChild(teacherCell);
+
+                    tbody.appendChild(row);
+                });
+            });
+            table.appendChild(tbody);
+        }
+
+        // Request notification permission
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
+        // Initialize the app
+        displayTimetable();
+        updateLectureInfo();
+        // Update lecture info every minute
+        setInterval(updateLectureInfo, 60000);
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
